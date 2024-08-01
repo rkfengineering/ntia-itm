@@ -13,32 +13,6 @@
 #define a_9000__meter                           9000e3
 #define THIRD                                   1.0 / 3.0
 
-#define MODE__P2P                               0
-#define MODE__AREA                              1
-
-
-/////////////////////////////
-// Main ITM Functions
-
-
-namespace NTIA::ITM {
-    ItmResults calcItmLoss_P2P_TLS_dB(const double& txHeight_m, const double& rxHeight_m, const std::vector<double>& terrainHeightList_m, 
-            const RadioClimate& climateCode, const double& refractivity_N, const double& freq_MHz,
-            const bool isTxHorizPolariz, const double& relPermittivity, const double& conductivity, 
-            const VariabilityMode& varMode, const double& timePercent, const double& locationPercent, const double& situationPercent);
-    ItmResults ITM_P2P_CR(double h_tx__meter, const double& h_rx__meter, const double& pfl[], int climate, const double& N_0, const double& freq_MHz,
-        int pol, const double& epsilon, const double& sigma, int mdvar, const double& confidence, const double& reliability,
-        const double& *A__db, long *warnings);
-    ItmResults ITM_AREA_TLS(double h_tx__meter, const double& h_rx__meter, int tx_site_criteria, int rx_site_criteria, const double& d__km,
-        const double& delta_h__meter, int climate, const double& N_0, const double& freq_MHz, int pol, const double& epsilon, const double& sigma,
-        int mdvar, const double& time, const double& location, const double& situation, const double& *A__db, long *warnings);
-    ItmResults ITM_AREA_CR(double h_tx__meter, const double& h_rx__meter, int tx_site_criteria, int rx_site_criteria, const double& d__km,
-        const double& delta_h__meter, int climate, const double& N_0, const double& freq_MHz, int pol, const double& epsilon, const double& sigma,
-        int mdvar, const double& confidence, const double& reliability, const double& *A__db, long *warnings);
-}
-
-
-
 /////////////////////////////
 // ITM Helper Functions
 

@@ -52,15 +52,6 @@ int ValidateInputs(double h_tx__meter, double h_rx__meter, int climate, double t
     if (h_rx__meter < 0.5 || h_rx__meter > 3000.0)
         return ERROR__RX_TERMINAL_HEIGHT;
 
-    if (climate != CLIMATE__EQUATORIAL &&
-        climate != CLIMATE__CONTINENTAL_SUBTROPICAL &&
-        climate != CLIMATE__MARITIME_SUBTROPICAL &&
-        climate != CLIMATE__DESERT &&
-        climate != CLIMATE__CONTINENTAL_TEMPERATE &&
-        climate != CLIMATE__MARITIME_TEMPERATE_OVER_LAND &&
-        climate != CLIMATE__MARITIME_TEMPERATE_OVER_SEA)
-        return ERROR__INVALID_RADIO_CLIMATE;
-
     if (N_0 < 250 || N_0 > 400)
         return ERROR__REFRACTIVITY;
 
@@ -70,22 +61,11 @@ int ValidateInputs(double h_tx__meter, double h_rx__meter, int climate, double t
     if (f__mhz < 20 || f__mhz > 20000)
         return ERROR__FREQUENCY;
 
-    if (pol != POLARIZATION__HORIZONTAL &&
-        pol != POLARIZATION__VERTICAL)
-        return ERROR__POLARIZATION;
-
     if (epsilon < 1)
         return ERROR__EPSILON;
 
     if (sigma <= 0)
         return ERROR__SIGMA;
-
-    if ((mdvar < 0) ||
-        (mdvar > 3 && mdvar < 10) ||
-        (mdvar > 13 && mdvar < 20) ||
-        (mdvar > 23 && mdvar < 30) ||
-        (mdvar > 33))
-        return ERROR__MDVAR;
 
     if (situation <= 0 || situation >= 100)
         return ERROR__INVALID_SITUATION;

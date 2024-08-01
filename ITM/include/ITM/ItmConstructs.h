@@ -23,6 +23,13 @@ namespace NTIA::ITM {
         IntermResults m_intermResults;
     };
     
+    /// @brief Tx & Rx siting criteria required as an input to area-mode ITM calculations
+    enum SitingCriteria {
+        Random,
+        Careful,
+        VeryCareful
+    };
+
     enum VariabilityMode {
         SingleMessageMode,
         AccidentalMode,
