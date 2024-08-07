@@ -1,63 +1,68 @@
-#include "ITM/itm.h"
+#include <ITM/ItmCommonCalculator.h>
+#include <ITM/ItmHelpers.h>
 
 /*=============================================================================
  |
  |  Description:  Compute the loss in the line-of-sight region
  |
- |        Input:  d__meter          - Path distance, in meters
+ |        Input:  inputDist_m          - Path distance, in meters
  |                h_e__meter[2]     - Terminal effective heights, in meters
- |                Z_g               - Complex surface transfer impedance
+ |                m_groundImpedance               - Complex surface transfer impedance
  |                delta_h__meter    - Terrain irregularity parameter
- |                M_d               - Diffraction slope
- |                A_d0              - Diffraction intercept
+ |                diffractSlope               - Diffraction slope
+ |                diffractLineIntercept              - Diffraction intercept
  |                d_sML__meter      - Maximum line-of-sight distance for
  |                                    a smooth earth, in meters
- |                f__mhz            - Frequency, in MHz
+ |                m_freq_MHz            - Frequency, in MHz
  |
  |      Outputs:  [None]
  |
  |      Returns:  A_los__db         - Loss, in dB
  |
  *===========================================================================*/
-double LineOfSightLoss(double d__meter, double h_e__meter[2], complex<double> Z_g, double delta_h__meter, 
-    double M_d, double A_d0, double d_sML__meter, double f__mhz)
-{
-    double delta_h_d__meter = TerrainRoughness(d__meter, delta_h__meter);
 
-    double sigma_h_d__meter = SigmaHFunction(delta_h_d__meter);
+namespace NTIA::ITM {
+    double ItmCommonCalculator::calcLineOfSightLoss_dB(const double& inputDist_m, 
+                const double& diffractSlope, const double& diffractLineIntercept, const double& maxDistSmoothEarth_LoS_m) {
+        const double tempTerrainIrreg_m = ItmHelpers::calcTerrainRoughness_m(inputDist_m, m_itmResults.m_intermResults.m_terrainIrreg_m);
+        const double tempSigmaH = ItmHelpers::calcSigmaH_m(tempTerrainIrreg_m);
 
-    // wavenumber, k
-    double wn = f__mhz / 47.7;
+        // Angular wavenumber, k
+        const double waveNumber = m_freq_MHz / ItmHelpers::kWaveToMHzFreqTerm;
 
-    // [Algorithm, Eqn 4.46]
-    double sin_psi = (h_e__meter[0] + h_e__meter[1]) / sqrt(pow(d__meter, 2) + pow(h_e__meter[0] + h_e__meter[1], 2));
+        // [Algorithm, Eqn 4.46]
+        const double& txEffHeight_m = m_itmResults.m_intermResults.m_txEffHeight_m;
+        const double& rxEffHeight_m = m_itmResults.m_intermResults.m_rxEffHeight_m;
 
-    // [Algorithm, Eqn 4.47]
-    complex<double> R_e = (sin_psi - Z_g) / (sin_psi + Z_g) * exp(-MIN(10.0, wn * sigma_h_d__meter * sin_psi));
+        const double effHeightSum_m = txEffHeight_m + rxEffHeight_m;
+        const double sinOfPsi = effHeightSum_m / std::sqrt(inputDist_m * inputDist_m + effHeightSum_m * effHeightSum_m);
 
-    // q = Magnitude of R_e', [Algorithm, Eqn 4.48]
-    double q = pow(R_e.real(), 2) + pow(R_e.imag(), 2);
-    if (q < 0.25 || q < sin_psi)
-        R_e = R_e * sqrt(sin_psi / q);
+        // [Algorithm, Eqn 4.47]
+        std::complex<double> reflCoeff_e = (sinOfPsi - m_groundImpedance) / (sinOfPsi + m_groundImpedance) * 
+                    std::exp(-std::min({10.0, waveNumber * tempSigmaH * sinOfPsi}));
 
-    // phase difference between rays, [Algorithm, Eqn 4.49]
-    double delta_phi = wn * 2.0 * h_e__meter[0] * h_e__meter[1] / d__meter;
+        // |R_e| = Magnitude of R_e', [Algorithm, Eqn 4.48]
+        const double reflCoeff_mag = reflCoeff_e.real() * reflCoeff_e.real() + reflCoeff_e.imag() * reflCoeff_e.imag();
+        if (reflCoeff_mag < 0.25 || reflCoeff_mag < sinOfPsi) {
+            reflCoeff_e *= std::sqrt(sinOfPsi / reflCoeff_mag);
+        }
+        // phase difference between rays, [Algorithm, Eqn 4.49]
+        double rayPhaseDiff_rad = waveNumber * 2.0 * txEffHeight_m * rxEffHeight_m / inputDist_m;
 
-    // [Algorithm, Eqn 4.50]
-    if (delta_phi > PI / 2.0)
-        delta_phi = PI - pow(PI / 2.0, 2) / delta_phi;
+        // [Algorithm, Eqn 4.50]
+        if (rayPhaseDiff_rad > M_PI / 2.0)
+            rayPhaseDiff_rad = M_PI - (M_PI / 2.0) * (M_PI / 2.0) / rayPhaseDiff_rad;
 
-    // Two-ray attenuation
-    complex<double> rr = complex<double>(cos(delta_phi), -sin(delta_phi)) + R_e;
-    double A_t__db = -10 * log10(pow(rr.real(), 2) + pow(rr.imag(), 2));
+        // Two-ray attenuation
+        std::complex<double> twoRayReflCoeff = std::complex<double>(std::cos(rayPhaseDiff_rad), -std::sin(rayPhaseDiff_rad)) + reflCoeff_e;
+        const double attenTwoRay_dB = -10.0 * std::log10(twoRayReflCoeff.real() * twoRayReflCoeff.real() + twoRayReflCoeff.imag() * twoRayReflCoeff.imag());
 
-    // Extended diffraction attenuation
-    double A_d__db = M_d * d__meter + A_d0;
+        // Extended diffraction attenuation
+        const double diffractLoss_dB = diffractSlope * inputDist_m + diffractLineIntercept;
 
-    // weighting factor
-    double w = 1 / (1 + f__mhz * delta_h__meter / MAX(10e3, d_sML__meter));
+        // weighting factor
+        const double w = 1.0 / (1.0 + m_freq_MHz * m_itmResults.m_intermResults.m_terrainIrreg_m / std::max({10.0e3, maxDistSmoothEarth_LoS_m}));
 
-    double A_los__db = w * A_t__db + (1 - w) * A_d__db;
-
-    return A_los__db;
+        return w * attenTwoRay_dB + (1.0 - w) * diffractLoss_dB;
+    }
 }

@@ -192,9 +192,13 @@ namespace NTIA::ITM {
         void setHorizonParameters(const double& effEarthRadius_km);
         void calcHorizonParameters();
         double calcTerrainIrreg_m(const double& distToStart_m, const double& distToEnd_m);
-        double calcLongleyRiceLoss_dB(PropagationMode& propMode);
+        double calcLongleyRiceLoss_dB(PropagationMode& propMode, const bool isP2P);
+        double calcLineOfSightLoss_dB(const double& inputDist_m, 
+                const double& diffractSlope, const double& diffractLineIntercept, const double& maxDistSmoothEarth_LoS_m);
         double calcSmoothEarthDiffractLoss_dB(const double& diffractPathLength_m, const double& effEarthRadius_km, const double& angularDist_LoS_rad);
         double calcKnifeEdgeDiffractLoss_dB(const double& inputDist_m, const double& effEarthRadius_km, const double& angularDist_LoS_rad);
+        double calcDiffractLoss_dB(const double& inputDist_m, const double& effEarthRadius_m, const bool isP2P, 
+                const double& angularDist_LoS_rad, const double& maxDistSmoothEarth_LoS_m);
         double calcTroposcatterLoss_dB(const double& tropoPathLength_m, const double& earthEffRadius_m, 
                 const double& angularDist_LoS_rad, double& initialH0_dB);
 

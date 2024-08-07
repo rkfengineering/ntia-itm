@@ -8,6 +8,8 @@ namespace NTIA::ITM::ItmHelpers {
     double constexpr kSpeedOfLight_mPerS { 299792458.0 };
     double constexpr kWaveToMHzFreqTerm { kSpeedOfLight_mPerS * 1.0e-6 / (2.0 * M_PI) };
 
+    double calcFSPL_dB(const double& dist_m, const double& freq_MHz);
+
     double calcSmoothEarthGainHeight_dB(const double& inputDist_km, const double& kValue);
     double calcSigmaH_m(const double& terrainIrreg_m);
     double calcTerrainRoughness_m(const double& pathDist_m, const double& terrainIrreg_m);

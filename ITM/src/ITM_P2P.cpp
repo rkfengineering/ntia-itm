@@ -1,4 +1,6 @@
 #include <ITM/ItmCommonCalculator.h>
+#include <ITM/ItmHelpers.h>
+
 #include <complex>
 
 namespace NTIA::ITM {
@@ -31,38 +33,18 @@ namespace NTIA::ITM {
         calcHorizonParameters();
 
         // Reference attenuation, in dB
-        double A_ref__db = 0;
-        int propmode = MODE__NOT_SET;
-        rtn = LongleyRice(theta_hzn, f__mhz, Z_g, d_hzn__meter, h_e__meter, gamma_e, N_s, delta_h__meter, h__meter, d__meter, MODE__P2P, 
-            &A_ref__db, warnings, &propmode);
-        if (rtn != SUCCESS)
-            return rtn;
-
-        double A_fs__db = FreeSpaceLoss(d__meter, f__mhz);
+        PropagationMode propMode = NotSet;
+        const double finalLoss_dB = calcLongleyRiceLoss_dB(propMode, true);
+        
+        m_itmResults.m_intermResults.m_fsplAtten_dB = ItmHelpers::calcFSPL_dB(m_itmResults.m_intermResults.m_terrainProfile.m_pathDist_km * 1.0e3, m_freq_MHz);
 
         // switch from percentages to ratios
         const double timeFrac = m_timePercent / 100.0;
         const double locationFrac = m_locationPercent / 100.0;
         const double situationFrac = m_situationPercent / 100.0;
 
-        *A__db = Variability(timeFrac, locationFrac, situationFrac, h_e__meter, delta_h__meter, f__mhz, d__meter, A_ref__db, climate, mdvar, warnings) + A_fs__db;
+        m_itmResults.m_atten_dB = Variability(timeFrac, locationFrac, situationFrac, d__meter, finalLoss_dB) + m_itmResults.m_intermResults.m_fsplAtten_dB;
 
-        // Save off intermediate values
-        interValues->A_ref__db = A_ref__db;
-        interValues->A_fs__db = A_fs__db;
-        interValues->delta_h__meter = delta_h__meter;
-        interValues->d_hzn__meter[0] = d_hzn__meter[0];
-        interValues->d_hzn__meter[1] = d_hzn__meter[1];
-        interValues->h_e__meter[0] = h_e__meter[0];
-        interValues->h_e__meter[1] = h_e__meter[1];
-        interValues->N_s = N_s;
-        interValues->theta_hzn[0] = theta_hzn[0];
-        interValues->theta_hzn[1] = theta_hzn[1];
-        interValues->mode = propmode;
-
-        if (*warnings != NO_WARNINGS)
-            return SUCCESS_WITH_WARNINGS;
-
-        return SUCCESS;
+        return m_itmResults;
     }
 } // end namespace

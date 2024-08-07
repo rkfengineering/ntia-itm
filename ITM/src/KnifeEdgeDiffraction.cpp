@@ -22,10 +22,9 @@ namespace NTIA::ITM {
         const double& txHorizonDist_m = m_itmResults.m_intermResults.m_txHorizonDist_m;
         const double& rxHorizonDist_m = m_itmResults.m_intermResults.m_rxHorizonDist_m;
 
-        const double maxDist_LoS_m = txHorizonDist_m + rxHorizonDist_m;                         // Maximum line-of-sight distance for actual path
-        const double angularDist_nLoS_rad = inputDist_m / effEarthRadius_km - angularDist_LoS_rad;    // Angular distance of diffraction region [Algorithm, Eqn 4.12]
-
-        const double diffractDist_nLoS_m = inputDist_m - maxDist_LoS_m;                                  // Diffraction distance, in meters
+        const double maxDist_LoS_m = txHorizonDist_m + rxHorizonDist_m;                             // Maximum line-of-sight distance for actual path
+        const double angularDist_nLoS_rad = inputDist_m / effEarthRadius_km - angularDist_LoS_rad;  // Angular distance of diffraction region [Algorithm, Eqn 4.12]
+        const double diffractDist_nLoS_m = inputDist_m - maxDist_LoS_m;                             // Diffraction distance, in meters
 
         // 1 / (4 pi) = 0.0795775
         // [TN101, Eqn I.7]
@@ -34,8 +33,6 @@ namespace NTIA::ITM {
         const double nu1 = nuCommonTerm * txHorizonDist_m / (diffractDist_nLoS_m + txHorizonDist_m);
         const double nu2 = nuCommonTerm * rxHorizonDist_m / (diffractDist_nLoS_m + rxHorizonDist_m);
 
-        double A_k__db = ItmHelpers::calcFresnelIntegral(nu1) + ItmHelpers::calcFresnelIntegral(nu2);                   // [TN101, Eqn I.1]
-
-        return A_k__db;
+        return ItmHelpers::calcFresnelIntegral(nu1) + ItmHelpers::calcFresnelIntegral(nu2);     // [TN101, Eqn I.1]
     }
 }
