@@ -3,11 +3,18 @@
 
 #include <ITM/ItmConstructs.h>
 
+#include <complex>
 #include <iostream>
 #include <sstream>
 #include <vector>
 
 namespace NTIA::ITM {
+    namespace {
+        // NOTE: WGS-84 mean Earth radius is 6371008.7714 meters
+        double constexpr kActualEarthCurvature_perMeter { 1.0 / 6371008.7714 };
+        double constexpr kDefaultMaxLoss_dB { 999.0 };
+    }
+
     class ItmCommonCalculator {
     public:
         /// @brief Construct generic ITM calculator for calling the model in either point-to-point or area mode
@@ -130,6 +137,68 @@ namespace NTIA::ITM {
             }
         }
 
+        void validateIntermValues() {
+            /*
+            // Check validity of small angle approximation
+            if (abs(theta_hzn[0]) > 200e-3)
+                *warnings |= WARN__TX_HORIZON_ANGLE;
+            if (abs(theta_hzn[1]) > 200e-3)
+                *warnings |= WARN__RX_HORIZON_ANGLE;
+
+            // Checks that the actual horizon distance can't be less than 1/10 of the smooth earth horizon distance
+            if (d_hzn__meter[0] < 0.1 * d_hzn_s__meter[0])
+                *warnings |= WARN__TX_HORIZON_DISTANCE_1;
+            if (d_hzn__meter[1] < 0.1 * d_hzn_s__meter[1])
+                *warnings |= WARN__RX_HORIZON_DISTANCE_1;
+
+            // Checks that the actual horizon distance can't be greater than 3 times the smooth earth horizon distance
+            if (d_hzn__meter[0] > 3.0 * d_hzn_s__meter[0])
+                *warnings |= WARN__TX_HORIZON_DISTANCE_2;
+            if (d_hzn__meter[1] > 3.0 * d_hzn_s__meter[1])
+                *warnings |= WARN__RX_HORIZON_DISTANCE_2;
+
+            // Check the surface refractivity
+            if (N_s < 150)
+                return ERROR__SURFACE_REFRACTIVITY_SMALL;
+            if (N_s > 400)
+                return ERROR__SURFACE_REFRACTIVITY_LARGE;
+            if (N_s < 250) // 150 <= N_s < 250
+                *warnings |= WARN__SURFACE_REFRACTIVITY;
+
+            // Check effective earth size
+            if (a_e__meter < 4000000 || a_e__meter > 13333333)
+                return ERROR__EFFECTIVE_EARTH;
+
+            // Check ground impedance
+            if (Z_g.real() <= abs(Z_g.imag()))
+                return ERROR__GROUND_IMPEDANCE;
+
+            const double minPathDist_m = std::abs(m_itmResults.m_intermResults.m_txEffHeight_m - m_itmResults.m_intermResults.m_rxEffHeight_m) / 0.2;
+
+            const double pathDist_m = m_itmResults.m_intermResults.m_terrainProfile.m_pathDist_km * 1.0e3;
+
+            if (pathDist_m < minPathDist_m)
+                *warnings |= WARN__PATH_DISTANCE_TOO_SMALL_1;
+            if (pathDist_m < 1.0e3)
+                *warnings |= WARN__PATH_DISTANCE_TOO_SMALL_2;
+            if (pathDist_m > 1.0e6)
+                *warnings |= WARN__PATH_DISTANCE_TOO_BIG_1;
+            if (pathDist_m > 2.0e6)
+                *warnings |= WARN__PATH_DISTANCE_TOO_BIG_2;
+            */
+        }
+
+        void initialize_P2P(const double& avgPathHeightAmsl_m);
+        void setHorizonParameters(const double& effEarthRadius_km);
+        void calcHorizonParameters();
+        double calcTerrainIrreg_m(const double& distToStart_m, const double& distToEnd_m);
+        double calcLongleyRiceLoss_dB(PropagationMode& propMode);
+        double calcSmoothEarthDiffractLoss_dB(const double& diffractPathLength_m, const double& effEarthRadius_km, const double& angularDist_LoS_rad);
+        double calcKnifeEdgeDiffractLoss_dB(const double& inputDist_m, const double& effEarthRadius_km, const double& angularDist_LoS_rad);
+        double calcTroposcatterLoss_dB(const double& tropoPathLength_m, const double& earthEffRadius_m, 
+                const double& angularDist_LoS_rad, double& initialH0_dB);
+
+        // Initial parameters
         double m_txHeight_m;
         double m_rxHeight_m;
         RadioClimate m_radioClimate;
@@ -142,7 +211,15 @@ namespace NTIA::ITM {
         double m_timePercent;
         double m_locationPercent;
         double m_situationPercent;
-    }
-}
+
+        // Intermediate parameters
+        std::complex<double> m_groundImpedance;
+        double m_surfaceRefractivity_N;     // Surface refractivity, in N-Units
+        double m_effEarthCurvature_perM;    // Curvature of the effective earth
+
+        // Output parameters (updated by each member function)
+        ItmResults m_itmResults;
+    };
+} // end namespace
 
 #endif // ITM_COMMON_CALCULATOR_H

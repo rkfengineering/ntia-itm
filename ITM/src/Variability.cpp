@@ -1,6 +1,5 @@
 #include "ITM/itm.h"
-#include "ITM/Enums.h"
-#include "ITM/Warnings.h"
+#include <ITM/MathHelpers.h>
 
 /*=============================================================================
  |
@@ -84,9 +83,9 @@ double Variability(double time, double location, double situation, double h_e__m
     double bfp2[] = { 0.0, 0.31, 0.0, 0.19, 0.31, 0.0, 0.0 };
     double bfp3[] = { 0.0, 2.00, 0.0, 1.79, 2.00, 0.0, 0.0 };
 
-    double z_T = InverseComplementaryCumulativeDistributionFunction(time);
-    double z_L = InverseComplementaryCumulativeDistributionFunction(location);
-    double z_S = InverseComplementaryCumulativeDistributionFunction(situation);
+    double z_T = NTIA::ITM::MathHelpers::calcInvComplCumulDistribFunc(time);
+    double z_L = NTIA::ITM::MathHelpers::calcInvComplCumulDistribFunc(location);
+    double z_S = NTIA::ITM::MathHelpers::calcInvComplCumulDistribFunc(situation);
 
     climate--; // 0-based indexes
 

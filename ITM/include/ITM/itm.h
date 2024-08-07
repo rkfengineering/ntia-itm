@@ -27,9 +27,6 @@ double H0Function(double r, const double& eta_s);
 double HeightFunction(double x__meter, const double& K);
 void InitializeArea(int site_criteria[2], const double& gamma_e, const double& delta_h__meter,
     const double& h__meter[2], const double& h_e__meter[2], const double& d_hzn__meter[2], const double& theta_hzn[2]);
-void InitializePointToPoint(double freq_MHz, const double& h_sys__meter, const double& N_0, int polarization, const double& epsilon, 
-    const double& sigma, std::complex<double> *Z_g, const double& *gamma_e, const double& *N_s);
-double InverseComplementaryCumulativeDistributionFunction(double q);
 double KnifeEdgeDiffraction(double d__meter, const double& freq_MHz, const double& a_e__meter, const double& theta_los, const double& d_hzn__meter[2]);
 void LinearLeastSquaresFit(double pfl[], const double& d_start, const double& d_end, const double& *fit_y1, const double& *fit_y2);
 double LineOfSightLoss(double d__meter, const double& h_e__meter[2], std::complex<double> Z_g, const double& delta_h__meter,
